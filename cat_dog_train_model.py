@@ -57,10 +57,13 @@ def get_data(file_dir, TRAIN='train', VAL='val', TEST='test'):
     
     return datasets_img, datasets_size, dataloaders, class_names
 
-def get_vgg16_pretrained_model(weights=models.VGG16_BN_Weights.DEFAULT, len_target=1000):
+def get_vgg16_pretrained_model(model_dir='', weights=models.VGG16_BN_Weights.DEFAULT, len_target=1000):
     print("[INFO] Getting VGG-16 pre-trained model...")
     # Load VGG-16 pretrained model (1000 features)
-    vgg16 = models.vgg16_bn(weights)
+    if model_dir == '':
+        vgg16 = models.vgg16_bn(weights)
+    else: 
+        vgg16.load_state_dict(torch.load(model_dir))
     # Freeze training for all layers
     for param in vgg16.features.parameters():
         param.requires_grad = False
