@@ -57,8 +57,23 @@ def get_data(file_dir, TRAIN='train', VAL='val', TEST='test'):
     
     return datasets_img, datasets_size, dataloaders, class_names
 
-def get_vgg16_pretrained_model(weights):
-    return None
+def get_vgg16_pretrained_model(weights=models.VGG16_BN_Weights.DEFAULT, len_target=1000):
+    print("[INFO] Getting VGG-16 pre-trained model...")
+    # Load VGG-16 pretrained model (1000 features)
+    vgg16 = models.vgg16_bn(weights)
+    # Freeze training for all layers
+    for param in vgg16.features.parameters():
+        param.requires_grad = False
+    # Get feature quantity of the last layer
+    num_features = vgg16.classifier[-1].in_features
+    # Remove the last layer
+    features = list(vgg16.classifier.children())[:-1]
+    # Add custom layer with custom outputs
+    features.extend([nn.Linear(num_features, len_target)])
+    # Replace the model classifier
+    vgg16.classifier = nn.Sequential(*features)
+    print("[INFO] Loaded VGG-16 pre-trained model\n", vgg16, "\n")
+    return vgg16
 
 def eval_model(vgg, criterion):
     return None
@@ -79,4 +94,5 @@ VAL = 'val'
 TEST = 'test'
 ## Get Data
 datasets_img, datasets_size, dataloaders, class_names = get_data(file_dir, TRAIN, VAL, TEST)
-
+## Get VGG16 pre-trained model
+vgg16 = get_vgg16_pretrained_model(len_target=2)
