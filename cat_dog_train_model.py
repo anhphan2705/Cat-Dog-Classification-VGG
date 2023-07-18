@@ -94,10 +94,7 @@ def get_vgg16_pretrained_model(model_dir='', weights=models.VGG16_BN_Weights.DEF
     """
     print("[INFO] Getting VGG-16 pre-trained model...")
     # Load VGG-16 pretrained model
-    if model_dir == '':
-        vgg16 = models.vgg16_bn(weights)
-    else: 
-        vgg16.load_state_dict(torch.load(model_dir))
+    vgg16 = models.vgg16_bn(weights)
     # Freeze training for all layers
     for param in vgg16.features.parameters():
         param.requires_grad = False
@@ -109,7 +106,12 @@ def get_vgg16_pretrained_model(model_dir='', weights=models.VGG16_BN_Weights.DEF
     features.extend([nn.Linear(num_features, len_target)])
     # Replace the model's classifier
     vgg16.classifier = nn.Sequential(*features)
+    
+    # If load personal pre-trained model
+    if model_dir != '':
+        vgg16.load_state_dict(torch.load(model_dir))
     print("[INFO] Loaded VGG-16 pre-trained model\n", vgg16, "\n")
+    
     return vgg16
 
 
@@ -274,6 +276,7 @@ if __name__ == '__main__':
     datasets_img, datasets_size, dataloaders, class_names = get_data(file_dir, TRAIN, VAL, TEST)
     # Get VGG16 pre-trained model
     vgg16 = get_vgg16_pretrained_model(len_target=2)
+    # vgg16 = get_vgg16_pretrained_model('./output/VGG16_trained.pth', len_target=2)      # If load custom pre-trained model, watch out to match len target
     # Move model to GPU
     if use_gpu:
         torch.cuda.empty_cache()
