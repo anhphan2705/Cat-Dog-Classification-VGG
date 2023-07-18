@@ -3,16 +3,16 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.autograd import Variable
-import torchvision
+# import torchvision
 from torchvision import datasets, models, transforms
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import time
 import os
 import copy
 
 ## Define file directories
 file_dir = './data'
-output_dir = './output'
+output_dir = './output/VGG16_trained.pth'
 TRAIN = 'train' 
 VAL = 'val'
 TEST = 'test'
@@ -85,7 +85,7 @@ def get_vgg16_pretrained_model(model_dir='', weights=models.VGG16_BN_Weights.DEF
     print("[INFO] Loaded VGG-16 pre-trained model\n", vgg16, "\n")
     return vgg16
 
-def eval_model(vgg, criterion):
+def eval_model(vgg, criterion, dataset=VAL):
     print('-'*18)
     print("[Evaluation Model] Evaluating...")
     # Keeping track
@@ -95,12 +95,10 @@ def eval_model(vgg, criterion):
     loss_test = 0
     accuracy_test = 0
     
-    test_batches = len(dataloaders[TEST])
-    
+    batches = len(dataloaders[dataset])
     # 1 forward pass each data without calculating gradient to find the prediction before training
-    for i, data in enumerate(dataloaders[TEST]):
-        if i % 100 == 0:
-            print("\r[Evaluation Model] Test batch {}/{}".format(i, test_batches), end='', flush=True)
+    for i, data in enumerate(dataloaders[dataset]):
+        print("\r[Evaluation Model] Evaluate '{}' batch {}/{}".format(dataset, i+1, batches), end='', flush=True)
             
         vgg.train(False)
         vgg.eval()
@@ -126,34 +124,114 @@ def eval_model(vgg, criterion):
         del inputs, labels, outputs, preds
         torch.cuda.empty_cache()
     
-    avg_loss = loss_test / datasets_size[TEST]
-    avg_accuracy = accuracy_test / datasets_size[TEST]
+    avg_loss = loss_test / datasets_size[dataset]
+    avg_accuracy = accuracy_test / datasets_size[dataset]
     
     elapsed_time = time.time() - since
-    print("[Evaluation Model] Evaluation completed in {:.0f}m {:.0f}s".format(elapsed_time // 60, elapsed_time % 60))
-    print("[Evaluation Model] Avg loss      (test): {:.4f}".format(avg_loss))
-    print("[Evaluation Model] Avg accuracy  (test): {:.4f}".format(avg_accuracy))
+    print()
+    print(f"[Evaluation Model] Evaluation completed in {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
+    print(f"[Evaluation Model] Avg loss      ({dataset}): {avg_loss:.4f}")
+    print(f"[Evaluation Model] Avg accuracy  ({dataset}): {avg_accuracy:.4f}")
     print('-'*18)
+    return avg_loss, avg_accuracy
 
 def train_model(vgg, criterion, optimizer, scheduler, num_epochs=10):
-    return None
+    print('\n','#'*15, ' TRAINING ', '#'*15, '\n')
+    print('[TRAIN MODEL] Training...')
+    since = time.time()
+    best_model_wts = copy.deepcopy(vgg.state_dict())
+    best_accuracy = 0.0
+    avg_loss = 0
+    avg_accuracy = 0
+    avg_loss_val = 0
+    avg_accuracy_val = 0
+    
+    train_batches = len(dataloaders[TRAIN])
+    
+    for epoch in range(num_epochs):
+        print('')
+        print(f"[TRAIN MODEL] Epoch {epoch+1}/{num_epochs}")
+        loss_train = 0
+        accuracy_train = 0
+        vgg.train(True)
+        
+        for i, data in enumerate(dataloaders[TRAIN]):
+            print("\r[TRAIN MODEL] Training batch {}/{}".format(i+1, train_batches // 2), end='', flush=True)
+            # Use half training dataset
+            if i >= train_batches // 2:
+                break
+            inputs, labels = data
+            # Forward pass
+            if use_gpu:
+                inputs = Variable(inputs.cuda())
+                labels = Variable(labels.cuda())
+            else:
+                inputs = Variable(inputs)
+                labels = Variable(labels)   
+            optimizer.zero_grad()
+            outputs = vgg(inputs)
+            _, preds = torch.max(outputs.data, 1)
+            
+            # Back propagation
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            
+            # Save result
+            loss_train += loss.data
+            accuracy_train += torch.sum(preds == labels.data)
+            
+            # Clear cache
+            del inputs, labels, outputs, preds
+            torch.cuda.empty_cache()
+            
+        avg_loss = loss_train * 2 / datasets_size[TRAIN]
+        avg_accuracy = accuracy_train * 2 /datasets_size[TRAIN]
+        vgg.train(False)
+        vgg.eval()
+        print('')
+        avg_loss_val, avg_accuracy_val = eval_model(vgg, criterion, dataset=VAL)
+        
+        print('-'*13)
+        print(f"[TRAIN MODEL] Epoch {epoch+1} result: ")
+        print(f"[TRAIN MODEL] Avg loss      (train):    {avg_loss:.4f}")
+        print(f"[TRAIN MODEL] Avg accuracy  (train):    {avg_accuracy:.4f}")
+        print(f"[TRAIN MODEL] Avg loss      (val):      {avg_loss_val:.4f}")
+        print(f"[TRAIN MODEL] Avg accuracy  (val):      {avg_accuracy_val:.4f}")
+        print('-'*13)
+        
+        if avg_accuracy_val > best_accuracy:
+            best_accuracy = avg_accuracy_val
+            best_model_wts = copy.deepcopy(vgg.state_dict())
+
+    elapsed_time = time.time() - since
+    print(f"[TRAIN MODEL] Training completed in {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
+    print(f"[TRAIN MODEL] Best accuracy: {best_accuracy:.4f}")
+    print('\n','#'*15, ' FINISHED ', '#'*15, '\n')
+    vgg.load_state_dict(best_model_wts)
+    return vgg
 
 if __name__ ==  '__main__':
-    ## Use GPU if available
+    # Use GPU if available
     use_gpu = torch.cuda.is_available()
     print("[INFO] Using CUDA") if use_gpu else print("[INFO] Using CPU")
-    ## Get Data
+    # Get Data
     datasets_img, datasets_size, dataloaders, class_names = get_data(file_dir, TRAIN, VAL, TEST)
-    ## Get VGG16 pre-trained model
+    # Get VGG16 pre-trained model
     vgg16 = get_vgg16_pretrained_model(len_target=2)
-    ## Move model to GPU
+    # Move model to GPU
     if use_gpu:
         torch.cuda.empty_cache()
         vgg16.cuda()
-    ## Define model requirements
+    # Define model requirements
     criterion = nn.CrossEntropyLoss()
     optimizer_ft = optim.SGD(vgg16.parameters(), lr=1e-3, momentum=0.9)
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=1)
-    ## Test before training
+    # Evaluate before training
     print("[INFO] Before training evalutaion in progress...")
-    eval_model(vgg16, criterion)
+    eval_model(vgg16, criterion, dataset=TEST)
+    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=2)
+    torch.save(vgg16.state_dict(), output_dir)
+    print("[INFO] After training evalutaion in progress...")
+    eval_model(vgg16, criterion, dataset=TEST)
+    
