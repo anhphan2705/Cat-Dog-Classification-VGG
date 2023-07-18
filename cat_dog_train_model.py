@@ -131,16 +131,14 @@ def eval_model(vgg, criterion):
     
     elapsed_time = time.time() - since
     print("[Evaluation Model] Evaluation completed in {:.0f}m {:.0f}s".format(elapsed_time // 60, elapsed_time % 60))
-    print("[Evaluation Model] Avg loss (test): {:.4f}".format(avg_loss))
-    print("[Evaluation Model] Avg accuracy (test): {:.4f}".format(avg_accuracy))
+    print("[Evaluation Model] Avg loss      (test): {:.4f}".format(avg_loss))
+    print("[Evaluation Model] Avg accuracy  (test): {:.4f}".format(avg_accuracy))
     print('-'*18)
 
 def train_model(vgg, criterion, optimizer, scheduler, num_epochs=10):
     return None
 
 if __name__ ==  '__main__':
-    # Main
-
     ## Use GPU if available
     use_gpu = torch.cuda.is_available()
     print("[INFO] Using CUDA") if use_gpu else print("[INFO] Using CPU")
