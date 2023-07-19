@@ -27,7 +27,7 @@ This repository contains code for training and evaluating an image classificatio
 
    - Place your training, validation, and test datasets in separate directories (`train`, `val`, `test`) inside the `data` directory.
    - If you want to load pre-trained model from your local computer. Add `model_dir` for `get_vgg16_pretrained_model()` function
-   
+
         ```python
         vgg16 = get_vgg16_pretrained_model('./output/VGG16_trained.pth', len_target=2)
         ```
@@ -36,13 +36,13 @@ This repository contains code for training and evaluating an image classificatio
 
    - Open the `cat_dog_train_model.py` file and modify the necessary parameters such as file directories, output directory, and your data files name.
 
-    ```python
-      file_dir = './data'
-      output_dir = './output/VGG16_trained.pth'
-      TRAIN = 'train' 
-      VAL = 'val'
-      TEST = 'test'
-    ```
+      ```python
+        file_dir = './data'
+        output_dir = './output/VGG16_trained.pth'
+        TRAIN = 'train' 
+        VAL = 'val'
+        TEST = 'test'
+      ```
 
    - Run the script:
 
