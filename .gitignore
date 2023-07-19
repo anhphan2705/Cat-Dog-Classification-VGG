@@ -161,4 +161,3 @@ cython_debug/
 
 data/
 output/
-TransferLearningWithSVM.ipynb
