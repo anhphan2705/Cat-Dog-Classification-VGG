@@ -27,13 +27,22 @@ This repository contains code for training and evaluating an image classificatio
 
    - Place your training, validation, and test datasets in separate directories (`train`, `val`, `test`) inside the `data` directory.
    - If you want to load pre-trained model from your local computer. Add `model_dir` for `get_vgg16_pretrained_model()` function
+   
         ```python
         vgg16 = get_vgg16_pretrained_model('./output/VGG16_trained.pth', len_target=2)
         ```
 
 4. Training and Evaluation:
 
-   - Open the `cat_dog_train_model.py` file and modify the necessary parameters such as file directories, hyperparameters, and number of classes.
+   - Open the `cat_dog_train_model.py` file and modify the necessary parameters such as file directories, output directory, and your data files name.
+
+    ```python
+      file_dir = './data'
+      output_dir = './output/VGG16_trained.pth'
+      TRAIN = 'train' 
+      VAL = 'val'
+      TEST = 'test'
+    ```
 
    - Run the script:
 
@@ -56,7 +65,7 @@ The project is organized as follows:
 The code follows the following structure:
 
 - Data Loading and Transformation:
-  - `get_data(file_dir, TRAIN='train', VAL='val', TEST='test')`: Loads and transforms the data using PyTorch's `ImageFolder` and `DataLoader`.
+  - `get_data(file_dir)`: Loads and transforms the data using PyTorch's `ImageFolder` and `DataLoader`.
 - Model Creation and Modification:
   - `get_vgg16_pretrained_model(model_dir='', weights=models.vgg16_bn(pretrained=True).state_dict(), len_target=1000)`: Retrieves the VGG-16 pre-trained model and modifies its classifier for the desired number of output classes.
 - Evaluation:
