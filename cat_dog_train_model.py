@@ -139,7 +139,7 @@ def eval_model(vgg, criterion, dataset=VAL):
     batches = len(dataloaders[dataset])
     # Perform forward pass on the dataset
     for i, data in enumerate(dataloaders[dataset]):
-        print("\r[Evaluation Model] Evaluate '{}' batch {}/{}".format(dataset, i + 1, batches), end='', flush=True)
+        print(f"\r[Evaluation Model] Evaluate '{dataset}' batch {i + 1}/{batches} ({len(data[1])*(i+1)} images)", end='', flush=True)
 
         vgg.train(False)
         vgg.eval()
@@ -211,7 +211,7 @@ def train_model(vgg, criterion, optimizer, scheduler, num_epochs=10):
         vgg.train(True)
 
         for i, data in enumerate(dataloaders[TRAIN]):
-            print("\r[TRAIN MODEL] Training batch {}/{}".format(i + 1, train_batches // 2), end='', flush=True)
+            print(f"\r[TRAIN MODEL] Training batch {i + 1}/{train_batches} ({len(data[1])*(i+1)} images)", end='', flush=True)
             # Use only half of the training dataset
             if i >= train_batches // 2:
                 break

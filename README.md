@@ -2,6 +2,17 @@
 
 This repository contains code for training and evaluating an image classification model based on the VGG-16 architecture using PyTorch. It will be able to tell if the input image is a dog or a cat after training.
 
+## Table of Contents
+
+- [Prerequisites](#Prerequisites)
+- [Getting Started](#Getting-Started)
+- [Project Structure](#Project-Structure)
+- [Code Structure](#Code-Structure)
+- [Results](#Results)
+- [Contributing](#Contributing)
+- [License](#License)
+- [Acknowledgments](#Acknowledgments)
+
 ## Prerequisites
 
 - Python 3.x
