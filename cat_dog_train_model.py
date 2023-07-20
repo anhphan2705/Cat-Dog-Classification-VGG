@@ -175,7 +175,7 @@ def eval_model(vgg, criterion, dataset=VAL):
     return avg_loss, avg_accuracy
 
 
-def train_model(vgg, criterion, optimizer, scheduler, num_epochs=10):
+def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=10):
     """
     Train the model using the training dataset and evaluate its performance on the validation dataset.
 
@@ -199,7 +199,7 @@ def train_model(vgg, criterion, optimizer, scheduler, num_epochs=10):
     avg_loss_val = 0
     avg_accuracy_val = 0
 
-    train_batches = len(dataloaders[TRAIN])
+    train_batches = len(dataloaders[dataset])
 
     for epoch in range(num_epochs):
         print('')
@@ -208,11 +208,8 @@ def train_model(vgg, criterion, optimizer, scheduler, num_epochs=10):
         accuracy_train = 0
         vgg.train(True)
 
-        for i, data in enumerate(dataloaders[TRAIN]):
+        for i, data in enumerate(dataloaders[dataset]):
             print(f"\r[TRAIN MODEL] Training batch {i + 1}/{train_batches} ({len(data[1])*(i+1)} images)", end='', flush=True)
-            # Use only half of the training dataset
-            if i >= train_batches // 2:
-                break
             inputs, labels = data
             
             # Forward pass
@@ -239,8 +236,8 @@ def train_model(vgg, criterion, optimizer, scheduler, num_epochs=10):
             del inputs, labels, outputs, preds
             torch.cuda.empty_cache()
 
-        avg_loss = loss_train * 2 / datasets_size[TRAIN]
-        avg_accuracy = accuracy_train * 2 / datasets_size[TRAIN]
+        avg_loss = loss_train / datasets_size[dataset]
+        avg_accuracy = accuracy_train / datasets_size[dataset]
         vgg.train(False)
         vgg.eval()
         print('')
