@@ -4,16 +4,20 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.autograd import Variable
 from torchvision import datasets, models, transforms
+import matplotlib.pyplot as plt
 import time
 import os
 import copy
 
+
 ## Define file directories
 file_dir = './data'
 output_dir = './output/VGG16_trained.pth'
+plot_dir = './plot/epoch_progress.jpg'
 TRAIN = 'train' 
 VAL = 'val'
 TEST = 'test'
+
 
 def get_data(file_dir):
     """
@@ -77,6 +81,49 @@ def get_data(file_dir):
 
     return datasets_img, datasets_size, dataloaders, class_names
 
+
+def get_epoch_progress_graph(accuracy_train, loss_train, accuracy_val, loss_val, save_dir=plot_dir):
+    print("[PLOT] Getting plot...")
+    # Main window
+    fig = plt.figure(figsize =(10, 10))
+    sub1 = plt.subplot(2, 1, 1)
+    sub2 = plt.subplot(2, 1, 2)
+    
+    # Subplot 1: Epoch vs Accuracy
+    sub1.plot(accuracy_train, 'or')
+    sub1.plot(accuracy_val, 'og')
+    sub1.set_xticks(list(range(0, len(accuracy_train)+3)))
+    for i, value in enumerate(accuracy_train):
+        value = round(float(value), 5)
+        sub1.annotate(value, (i, accuracy_train[i]))
+    for i, value in enumerate(accuracy_val):
+        value = round(float(value), 5)
+        sub1.annotate(value, (i, accuracy_val[i]))
+    sub1.legend(labels=["train", "val"], loc='best')
+    sub1.set_xlabel("Epoch")
+    sub1.set_ylabel("Accuracy")
+    sub1.set_title("Epoch Accuracy")
+    
+    # Subplot 2: Epoch vs Loss
+    sub2.plot(loss_train, 'or')
+    sub2.plot(loss_val, 'og')
+    sub2.set_xticks(list(range(0, len(loss_train)+3)))
+    for i, value in enumerate(loss_train):
+        value = round(float(value), 5)
+        sub2.annotate(value, (i, loss_train[i]))
+    for i, value in enumerate(loss_val):
+        value = round(float(value), 5)
+        sub2.annotate(value, (i, loss_val[i]))
+    sub2.legend(labels=["Train", "Val"], loc='best')
+    sub2.set_xlabel("Epoch")
+    sub2.set_ylabel("Loss")
+    sub2.set_title("Epoch Loss")
+    
+    # Output
+    print("[PLOT] Outputing plot...")
+    plt.savefig(save_dir)
+    plt.show().cpu()
+    
 
 def get_vgg16_pretrained_model(model_dir='', weights=models.VGG16_BN_Weights.DEFAULT, len_target=1000):
     """
@@ -195,10 +242,10 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
     since = time.time()
     best_model_wts = copy.deepcopy(vgg.state_dict())
     best_accuracy = 0.0
-    avg_loss = 0
-    avg_accuracy = 0
-    avg_loss_val = 0
-    avg_accuracy_val = 0
+    losses = []
+    accuracy = []
+    losses_val = []
+    accuracy_val = []
 
     train_batches = len(dataloaders[dataset])
 
@@ -244,7 +291,14 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
         vgg.eval()
         print('')
         avg_loss_val, avg_accuracy_val = eval_model(vgg, criterion, dataset=VAL)
-
+        
+        # Save data to plot graph
+        losses.append(avg_loss.cpu())
+        accuracy.append(avg_accuracy.cpu())
+        losses_val.append(avg_loss_val.cpu())
+        accuracy_val.append(avg_accuracy_val.cpu())
+        
+        # Print result
         print('-' * 13)
         print(f"[TRAIN MODEL] Epoch {epoch + 1} result: ")
         print(f"[TRAIN MODEL] Avg loss      (train):    {avg_loss:.4f}")
@@ -262,6 +316,8 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
     print(f"[TRAIN MODEL] Best accuracy: {best_accuracy:.4f}")
     print('\n', '#' * 15, ' FINISHED ', '#' * 15, '\n')
     vgg.load_state_dict(best_model_wts)
+    # Print Graph
+    get_epoch_progress_graph(accuracy, losses, accuracy_val, losses_val)
     return vgg
 
 
@@ -272,7 +328,7 @@ if __name__ == '__main__':
     # Get Data
     datasets_img, datasets_size, dataloaders, class_names = get_data(file_dir)
     # Get VGG16 pre-trained model
-    vgg16 = get_vgg16_pretrained_model("./output/VGG16_trained.pth", len_target=2)
+    vgg16 = get_vgg16_pretrained_model(len_target=2)
     # vgg16 = get_vgg16_pretrained_model('./output/VGG16_trained.pth', len_target=2)      # If load custom pre-trained model, watch out to match len target
     # Move model to GPU
     if use_gpu:
