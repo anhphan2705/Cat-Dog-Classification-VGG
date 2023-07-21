@@ -11,7 +11,7 @@ This repository contains code for training and evaluating an image classificatio
 - [Results](#results)
 - [Contributing](#contributing)
 - [License](#license)
-- [Acknowledgments](#acknowledgments)
+- [Acknowledgments](#acknowledgements)
 
 ## Prerequisites
 
