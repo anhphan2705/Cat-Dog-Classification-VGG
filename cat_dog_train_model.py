@@ -391,7 +391,7 @@ if __name__ == '__main__':
     datasets_img, datasets_size, dataloaders, class_names = get_data(file_dir)
     # Get VGG16 pre-trained model
     vgg16 = get_vgg16_pretrained_model(len_target=2)
-    # vgg16 = get_vgg16_pretrained_model('./output/VGG16_trained.pth', len_target=2)      # If load custom pre-trained model, watch out to match len target
+    # vgg16 = get_vgg16_pretrained_model(model_dir='./output/VGG16_trained.pth', len_target=2)      # If load custom pre-trained model, watch out to match len target
     # Move model to GPU
     if use_gpu:
         torch.cuda.empty_cache()
