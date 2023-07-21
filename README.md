@@ -127,7 +127,9 @@ The code follows the following structure:
 
 ## Results
 
-The trained VGG-16 model will be saved in the `output` directory as `VGG16_trained.pth`. You can use this model for inference on new images or further fine-tuning if needed.
+- The trained VGG-16 model will be saved in the `output` directory as `VGG16_trained.pth`. You can use this model for inference on new images or further fine-tuning if needed.
+- There will also a plotted chart of all the epoch stats saved in `output` as `epoch_progress.jpg`
+- Finally, a full classification report of the model when testing the `test` file will also be saved in `output` as `classification_report.txt`
 
 ## Contributing
 
