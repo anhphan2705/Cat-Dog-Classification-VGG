@@ -4,14 +4,14 @@ This repository contains code for training and evaluating an image classificatio
 
 ## Table of Contents
 
-- [Prerequisites](#Prerequisites)
-- [Getting Started](#Getting-Started)
-- [Project Structure](#Project-Structure)
-- [Code Structure](#Code-Structure)
-- [Results](#Results)
-- [Contributing](#Contributing)
-- [License](#License)
-- [Acknowledgments](#Acknowledgments)
+- [Prerequisites](#prerequisites)
+- [Getting Started](#getting-Started)
+- [Project Structure](#project-structure)
+- [Code Structure](#code-structure)
+- [Results](#results)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
 ## Prerequisites
 
