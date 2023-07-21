@@ -85,8 +85,10 @@ If you want to load a pre-trained model from your local computer, add the `model
    - Open the `cat_dog_train_model.py` file and modify the necessary parameters such as file directories, output directory, and your data files name.
 
      ```python
-     file_dir = './data'
-     output_dir = './output/VGG16_trained.pth'
+     file_dir = './data-shorten'
+     out_model_dir = './output/VGG16_trained.pth'
+     out_plot_dir = './output/epoch_progress.jpg'
+     out_report_dir = './output/classification_report.txt'
      TRAIN = 'train' 
      VAL = 'val'
      TEST = 'test'
