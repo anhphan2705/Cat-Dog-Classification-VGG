@@ -5,13 +5,14 @@ from torch.optim import lr_scheduler
 from torch.autograd import Variable
 from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt
+from sklearn.metrics import f1_score
 import time
 import os
 import copy
 
 
 ## Define file directories
-file_dir = './data'
+file_dir = './data-shorten'
 output_dir = './output/VGG16_trained.pth'
 plot_dir = './plot/epoch_progress.jpg'
 TRAIN = 'train' 
@@ -82,7 +83,7 @@ def get_data(file_dir):
     return datasets_img, datasets_size, dataloaders, class_names
 
 
-def get_epoch_progress_graph(accuracy_train, loss_train, accuracy_val, loss_val, save_dir=plot_dir):
+def get_epoch_progress_graph(accuracy_train, loss_train, f1, accuracy_val, loss_val, f1_val, save_dir=plot_dir):
     print("[PLOT] Getting plot...")
     # Main window
     fig = plt.figure(figsize =(10, 10))
@@ -91,7 +92,9 @@ def get_epoch_progress_graph(accuracy_train, loss_train, accuracy_val, loss_val,
     
     # Subplot 1: Epoch vs Accuracy
     sub1.plot(accuracy_train, 'or')
+    sub1.plot(f1, 'sr')
     sub1.plot(accuracy_val, 'og')
+    sub1.plot(f1_val, 'sg')
     sub1.set_xticks(list(range(0, len(accuracy_train)+3)))
     for i, value in enumerate(accuracy_train):
         value = round(float(value), 4)
@@ -99,7 +102,13 @@ def get_epoch_progress_graph(accuracy_train, loss_train, accuracy_val, loss_val,
     for i, value in enumerate(accuracy_val):
         value = round(float(value), 4)
         sub1.annotate(value, (i, accuracy_val[i]))
-    sub1.legend(labels=["train", "val"], loc='best')
+    for i, value in enumerate(f1):
+        value = round(float(value), 4)
+        sub1.annotate(value, (i, f1[i]))
+    for i, value in enumerate(f1_val):
+        value = round(float(value), 4)
+        sub1.annotate(value, (i, f1_val[i]))
+    sub1.legend(labels=["train", "f1", "val", "f1_val"], loc='best')
     sub1.set_xlabel("Epoch")
     sub1.set_ylabel("Accuracy")
     sub1.set_title("Epoch Accuracy")
@@ -122,7 +131,7 @@ def get_epoch_progress_graph(accuracy_train, loss_train, accuracy_val, loss_val,
     # Output
     print("[PLOT] Outputing plot...")
     plt.savefig(save_dir)
-    plt.show().cpu()
+    plt.show()
     
 
 def get_vgg16_pretrained_model(model_dir='', weights=models.VGG16_BN_Weights.DEFAULT, len_target=1000):
@@ -181,6 +190,7 @@ def eval_model(vgg, criterion, dataset=VAL):
     avg_accuracy = 0
     loss_test = 0
     accuracy_test = 0
+    f1 = []
 
     batches = len(dataloaders[dataset])
     # Perform forward pass on the dataset
@@ -206,6 +216,8 @@ def eval_model(vgg, criterion, dataset=VAL):
 
         loss_test += loss.data
         accuracy_test += torch.sum(preds == labels.data)
+        f1_sc = f1_score(labels.data.cpu(), preds.cpu())
+        f1.append(f1_sc)
 
         # Clear cache to prevent out of memory
         del inputs, labels, outputs, preds
@@ -213,14 +225,16 @@ def eval_model(vgg, criterion, dataset=VAL):
 
     avg_loss = loss_test / datasets_size[dataset]
     avg_accuracy = accuracy_test / datasets_size[dataset]
+    avg_f1_score = sum(f1) / len(f1)
 
     elapsed_time = time.time() - since
     print()
     print(f"[Evaluation Model] Evaluation completed in {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
-    print(f"[Evaluation Model] Avg loss      ({dataset}): {avg_loss:.4f}")
-    print(f"[Evaluation Model] Avg accuracy  ({dataset}): {avg_accuracy:.4f}")
+    print(f"[Evaluation Model] Avg loss         ({dataset}): {avg_loss:.4f}")
+    print(f"[Evaluation Model] Avg accuracy     ({dataset}): {avg_accuracy:.4f}")
+    print(f"[Evaluation Model] Avg f1 accuracy  ({dataset}): {avg_f1_score:.4f}")
     print('-' * 18)
-    return avg_loss, avg_accuracy
+    return avg_loss, avg_accuracy, avg_f1_score
 
 
 def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=10):
@@ -246,6 +260,8 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
     accuracy = []
     losses_val = []
     accuracy_val = []
+    f1_scores = []
+    f1_scores_val = []
 
     train_batches = len(dataloaders[dataset])
 
@@ -255,6 +271,7 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
         loss_train = 0
         accuracy_train = 0
         vgg.train(True)
+        f1 = []
 
         for i, data in enumerate(dataloaders[dataset]):
             print(f"\r[TRAIN MODEL] Training batch {i + 1}/{train_batches} ({len(data[1])*(i+1)} images)", end='', flush=True)
@@ -280,6 +297,8 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
             # Save results
             loss_train += loss.data
             accuracy_train += torch.sum(preds == labels.data)
+            f1_sc = f1_score(labels.data.cpu(), preds.cpu())
+            f1.append(f1_sc)
 
             # Clear cache
             del inputs, labels, outputs, preds
@@ -287,24 +306,29 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
 
         avg_loss = loss_train / datasets_size[dataset]
         avg_accuracy = accuracy_train / datasets_size[dataset]
+        avg_f1_score = sum(f1) / len(f1)
         vgg.train(False)
         vgg.eval()
         print('')
-        avg_loss_val, avg_accuracy_val = eval_model(vgg, criterion, dataset=VAL)
+        avg_loss_val, avg_accuracy_val, avg_f1_score_val = eval_model(vgg, criterion, dataset=VAL)
         
         # Save data to plot graph
         losses.append(avg_loss.cpu())
         accuracy.append(avg_accuracy.cpu())
         losses_val.append(avg_loss_val.cpu())
         accuracy_val.append(avg_accuracy_val.cpu())
+        f1_scores.append(avg_f1_score)
+        f1_scores_val.append(avg_f1_score_val)
         
         # Print result
         print('-' * 13)
         print(f"[TRAIN MODEL] Epoch {epoch + 1} result: ")
-        print(f"[TRAIN MODEL] Avg loss      (train):    {avg_loss:.4f}")
-        print(f"[TRAIN MODEL] Avg accuracy  (train):    {avg_accuracy:.4f}")
-        print(f"[TRAIN MODEL] Avg loss      (val):      {avg_loss_val:.4f}")
-        print(f"[TRAIN MODEL] Avg accuracy  (val):      {avg_accuracy_val:.4f}")
+        print(f"[TRAIN MODEL] Avg loss          (train):    {avg_loss:.4f}")
+        print(f"[TRAIN MODEL] Avg accuracy      (train):    {avg_accuracy:.4f}")
+        print(f"[TRAIN MODEL] Avg f1 accuracy   (train):    {avg_f1_score:.4f}")
+        print(f"[TRAIN MODEL] Avg loss          (val):      {avg_loss_val:.4f}")
+        print(f"[TRAIN MODEL] Avg accuracy      (val):      {avg_accuracy_val:.4f}")
+        print(f"[TRAIN MODEL] Avg f1 accuracy   (val):      {avg_f1_score_val:.4f}")
         print('-' * 13)
 
         if avg_accuracy_val > best_accuracy:
@@ -317,7 +341,7 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
     print('\n', '#' * 15, ' FINISHED ', '#' * 15, '\n')
     vgg.load_state_dict(best_model_wts)
     # Print Graph
-    get_epoch_progress_graph(accuracy, losses, accuracy_val, losses_val)
+    get_epoch_progress_graph(accuracy, losses, f1_scores, accuracy_val, losses_val, f1_scores_val)
     return vgg
 
 
@@ -342,7 +366,7 @@ if __name__ == '__main__':
     print("[INFO] Before training evaluation in progress...")
     eval_model(vgg16, criterion, dataset=TEST)
     # Training
-    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=30)
+    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=3)
     torch.save(vgg16.state_dict(), output_dir)
     # Evaluate after training
     print("[INFO] After training evaluation in progress...")
