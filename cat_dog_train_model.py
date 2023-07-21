@@ -6,6 +6,7 @@ from torch.autograd import Variable
 from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt
 from sklearn.metrics import f1_score
+import numpy as np
 import time
 import os
 import copy
@@ -174,7 +175,8 @@ def eval_model(vgg, criterion, dataset=VAL):
     avg_accuracy = 0
     loss_test = 0
     accuracy_test = 0
-    f1 = []
+    preds_full = []
+    truth_full = []
 
     batches = len(dataloaders[dataset])
     # Perform forward pass on the dataset
@@ -197,28 +199,29 @@ def eval_model(vgg, criterion, dataset=VAL):
 
         _, preds = torch.max(outputs.data, 1)
         loss = criterion(outputs, labels)
-
-        loss_test += loss.data
         accuracy_test += torch.sum(preds == labels.data)
-        f1_sc = f1_score(labels.data.cpu(), preds.cpu())
-        f1.append(f1_sc)
+        loss_test += loss.data
+        
+        for i in range(len(preds)):
+            preds_full.append(preds.cpu().numpy()[i])
+            truth_full.append(labels.data.cpu().numpy()[i])
 
         # Clear cache to prevent out of memory
         del inputs, labels, outputs, preds
         torch.cuda.empty_cache()
-
+        
     avg_loss = loss_test / datasets_size[dataset]
     avg_accuracy = accuracy_test / datasets_size[dataset]
-    avg_f1_score = sum(f1) / len(f1)
+    f1_sc = f1_score(truth_full, preds_full)
 
     elapsed_time = time.time() - since
     print()
     print(f"[Evaluation Model] Evaluation completed in {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
     print(f"[Evaluation Model] Avg loss         ({dataset}): {avg_loss:.4f}")
     print(f"[Evaluation Model] Avg accuracy     ({dataset}): {avg_accuracy:.4f}")
-    print(f"[Evaluation Model] Avg f1 accuracy  ({dataset}): {avg_f1_score:.4f}")
+    print(f"[Evaluation Model] Avg f1 accuracy  ({dataset}): {f1_sc:.4f}")
     print('-' * 18)
-    return avg_loss, avg_accuracy, avg_f1_score
+    return avg_loss, avg_accuracy, f1_sc
 
 
 def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=10):
@@ -334,13 +337,13 @@ if __name__ == '__main__':
         vgg16.cuda()
     # Define model requirements
     criterion = nn.CrossEntropyLoss()
-    optimizer_ft = optim.SGD(vgg16.parameters(), lr=1e-3, momentum=0.9)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=1)
+    optimizer_ft = optim.SGD(vgg16.parameters(), lr=1e-2, momentum=0.9)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.5)
     # Evaluate before training
     print("[INFO] Before training evaluation in progress...")
     eval_model(vgg16, criterion, dataset=TEST)
     # Training
-    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=50)
+    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=5)
     torch.save(vgg16.state_dict(), output_dir)
     # Evaluate after training
     print("[INFO] After training evaluation in progress...")
