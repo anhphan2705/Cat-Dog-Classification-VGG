@@ -5,8 +5,7 @@ from torch.optim import lr_scheduler
 from torch.autograd import Variable
 from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt
-from sklearn.metrics import f1_score
-import numpy as np
+from sklearn.metrics import confusion_matrix, classification_report
 import time
 import os
 import copy
@@ -14,8 +13,9 @@ import copy
 
 ## Define file directories
 file_dir = './data-shorten'
-output_dir = './output/VGG16_trained.pth'
-plot_dir = './plot/epoch_progress.jpg'
+out_model_dir = './output/VGG16_trained.pth'
+out_plot_dir = './output/epoch_progress.jpg'
+out_report_dir = './output/classification_report.txt'
 TRAIN = 'train' 
 VAL = 'val'
 TEST = 'test'
@@ -84,7 +84,17 @@ def get_data(file_dir):
     return datasets_img, datasets_size, dataloaders, class_names
 
 
-def get_epoch_progress_graph(accuracy_train, loss_train, accuracy_val, loss_val, save_dir=plot_dir):
+def get_epoch_progress_graph(accuracy_train, loss_train, accuracy_val, loss_val, save_dir=out_plot_dir):
+    """
+    Plot the progress of accuracy and loss during training epochs.
+
+    Args:
+        accuracy_train (list): List of accuracy values for training set at each epoch.
+        loss_train (list): List of loss values for training set at each epoch.
+        accuracy_val (list): List of accuracy values for validation set at each epoch.
+        loss_val (list): List of loss values for validation set at each epoch.
+        save_dir (str): Directory path to save the plot image. Defaults to './output/epoch_progress.jpg'.
+    """
     print("[PLOT] Getting plot...")
     # Main window
     fig = plt.figure(figsize =(20, 10))
@@ -155,6 +165,56 @@ def get_vgg16_pretrained_model(model_dir='', weights=models.VGG16_BN_Weights.DEF
     return vgg16
 
 
+def get_classification_report(truth_values, pred_values):
+    """
+    Generate a classification report and confusion matrix based on ground truth and predicted labels.
+
+    Args:
+        truth_values (list): List of ground truth labels.
+        pred_values (list): List of predicted labels.
+
+    Returns:
+        None
+    """
+    report = classification_report(truth_values, pred_values, target_names=class_names,  digits=4)
+    conf_matrix = confusion_matrix(truth_values, pred_values, normalize='all') 
+    print('[Evalutaion Model] Showing detailed report\n')
+    print(report)
+    print('[Evalutaion Model] Showing confusion matrix')
+    print(f'                       Predicted Label              ')
+    print(f'                         0            1         ')
+    print(f' Truth Label     0   {conf_matrix[0][0]:4f}     {conf_matrix[0][1]:4f}')
+    print(f'                 1   {conf_matrix[1][0]:4f}     {conf_matrix[1][1]:4f}')
+    
+    
+def save_classification_report(truth_values, pred_values, out_report_dir):
+    """
+    Save the classification report and confusion matrix to a text file.
+
+    Args:
+        truth_values (list): List of ground truth labels.
+        pred_values (list): List of predicted labels.
+        out_report_dir (str): Directory path to save the classification report file.
+        
+    Returns:
+        None
+    """
+    print('[INFO] Saving report...')
+    c_report = classification_report(truth_values, pred_values, target_names=class_names,  digits=4)
+    conf_matrix = confusion_matrix(truth_values, pred_values, normalize='all') 
+    matrix_report = ['                       Predicted Label              ', 
+                     f'                         0            1         ',
+                     f' Truth Label     0   {conf_matrix[0][0]:4f}     {conf_matrix[0][1]:4f}',
+                     f'                 1   {conf_matrix[1][0]:4f}     {conf_matrix[1][1]:4f}']
+    
+    with open(out_report_dir, 'w') as f:
+        f.write(c_report)
+        f.write('\n')
+        for line in matrix_report:
+            f.write(line)
+            f.write('\n')
+        
+
 def eval_model(vgg, criterion, dataset=VAL):
     """
     Evaluate the model's performance on the specified dataset.
@@ -168,15 +228,15 @@ def eval_model(vgg, criterion, dataset=VAL):
         avg_loss (float): Average loss on the dataset.
         avg_accuracy (float): Average accuracy on the dataset.
     """
-    print('-' * 18)
+    print('-' * 60)
     print("[Evaluation Model] Evaluating...")
     since = time.time()
     avg_loss = 0
     avg_accuracy = 0
     loss_test = 0
     accuracy_test = 0
-    preds_full = []
-    truth_full = []
+    pred_values = []
+    truth_values = []
 
     batches = len(dataloaders[dataset])
     # Perform forward pass on the dataset
@@ -203,8 +263,8 @@ def eval_model(vgg, criterion, dataset=VAL):
         loss_test += loss.data
         
         for i in range(len(preds)):
-            preds_full.append(preds.cpu().numpy()[i])
-            truth_full.append(labels.data.cpu().numpy()[i])
+            pred_values.append(preds.cpu().numpy()[i])
+            truth_values.append(labels.data.cpu().numpy()[i])
 
         # Clear cache to prevent out of memory
         del inputs, labels, outputs, preds
@@ -212,16 +272,17 @@ def eval_model(vgg, criterion, dataset=VAL):
         
     avg_loss = loss_test / datasets_size[dataset]
     avg_accuracy = accuracy_test / datasets_size[dataset]
-    f1_sc = f1_score(truth_full, preds_full)
 
     elapsed_time = time.time() - since
     print()
     print(f"[Evaluation Model] Evaluation completed in {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
     print(f"[Evaluation Model] Avg loss         ({dataset}): {avg_loss:.4f}")
     print(f"[Evaluation Model] Avg accuracy     ({dataset}): {avg_accuracy:.4f}")
-    print(f"[Evaluation Model] Avg f1 accuracy  ({dataset}): {f1_sc:.4f}")
-    print('-' * 18)
-    return avg_loss, avg_accuracy, f1_sc
+    get_classification_report(truth_values, pred_values)
+    if dataset == TEST:
+        save_classification_report(truth_values, pred_values, out_report_dir)
+    print('-' * 60)
+    return avg_loss, avg_accuracy
 
 
 def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=10):
@@ -291,7 +352,7 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
         vgg.train(False)
         vgg.eval()
         print('')
-        avg_loss_val, avg_accuracy_val, avg_f1_score_val = eval_model(vgg, criterion, dataset=VAL)
+        avg_loss_val, avg_accuracy_val = eval_model(vgg, criterion, dataset=VAL)
         
         # Save data to plot graph
         losses.append(avg_loss.cpu())
@@ -343,8 +404,8 @@ if __name__ == '__main__':
     print("[INFO] Before training evaluation in progress...")
     eval_model(vgg16, criterion, dataset=TEST)
     # Training
-    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=5)
-    torch.save(vgg16.state_dict(), output_dir)
+    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=10)
+    torch.save(vgg16.state_dict(), out_model_dir)
     # Evaluate after training
     print("[INFO] After training evaluation in progress...")
     eval_model(vgg16, criterion, dataset=TEST)
