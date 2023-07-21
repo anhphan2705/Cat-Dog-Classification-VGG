@@ -42,38 +42,40 @@ pip install torch torchvision matplotlib scikit-learn
 Place your training, validation, and test datasets in separate directories (`train`, `val`, `test`) inside the `data` directory as shown below:
 
 ```
-cat_dog_train_model.py
-data/
-    train/
-        class1/
-            image1.jpg
-            image2.jpg
-            ...
-        class2/
-            image1.jpg
-            image2.jpg
-            ...
-        ...
-    val/
-        class1/
-            image1.jpg
-            image2.jpg
-            ...
-        class2/
-            image1.jpg
-            image2.jpg
-            ...
-        ...
-    test/
-        class1/
-            image1.jpg
-            image2.jpg
-            ...
-        class2/
-            image1.jpg
-            image2.jpg
-            ...
-        ...
+Image-Classification-Dog-Cat/
+  cat_dog_train_model.py
+  pre-trained-model.pth (optional)
+  data/
+      train/
+          class1/
+              image1.jpg
+              image2.jpg
+              ...
+          class2/
+              image1.jpg
+              image2.jpg
+              ...
+          ...
+      val/
+          class1/
+              image1.jpg
+              image2.jpg
+              ...
+          class2/
+              image1.jpg
+              image2.jpg
+              ...
+          ...
+      test/
+          class1/
+              image1.jpg
+              image2.jpg
+              ...
+          class2/
+              image1.jpg
+              image2.jpg
+              ...
+          ...
 ```
 
 If you want to load a pre-trained model from your local computer, add the `model_dir` argument to the `get_vgg16_pretrained_model()` function in the `cat_dog_train_model.py` script.
