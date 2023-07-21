@@ -94,10 +94,10 @@ def get_epoch_progress_graph(accuracy_train, loss_train, accuracy_val, loss_val,
     sub1.plot(accuracy_val, 'og')
     sub1.set_xticks(list(range(0, len(accuracy_train)+3)))
     for i, value in enumerate(accuracy_train):
-        value = round(float(value), 5)
+        value = round(float(value), 4)
         sub1.annotate(value, (i, accuracy_train[i]))
     for i, value in enumerate(accuracy_val):
-        value = round(float(value), 5)
+        value = round(float(value), 4)
         sub1.annotate(value, (i, accuracy_val[i]))
     sub1.legend(labels=["train", "val"], loc='best')
     sub1.set_xlabel("Epoch")
@@ -109,10 +109,10 @@ def get_epoch_progress_graph(accuracy_train, loss_train, accuracy_val, loss_val,
     sub2.plot(loss_val, 'og')
     sub2.set_xticks(list(range(0, len(loss_train)+3)))
     for i, value in enumerate(loss_train):
-        value = round(float(value), 5)
+        value = round(float(value), 4)
         sub2.annotate(value, (i, loss_train[i]))
     for i, value in enumerate(loss_val):
-        value = round(float(value), 5)
+        value = round(float(value), 4)
         sub2.annotate(value, (i, loss_val[i]))
     sub2.legend(labels=["Train", "Val"], loc='best')
     sub2.set_xlabel("Epoch")
