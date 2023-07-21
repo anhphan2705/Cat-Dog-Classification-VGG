@@ -83,47 +83,31 @@ def get_data(file_dir):
     return datasets_img, datasets_size, dataloaders, class_names
 
 
-def get_epoch_progress_graph(accuracy_train, loss_train, f1, accuracy_val, loss_val, f1_val, save_dir=plot_dir):
+def get_epoch_progress_graph(accuracy_train, loss_train, accuracy_val, loss_val, save_dir=plot_dir):
     print("[PLOT] Getting plot...")
     # Main window
-    fig = plt.figure(figsize =(10, 10))
+    fig = plt.figure(figsize =(20, 10))
     sub1 = plt.subplot(2, 1, 1)
     sub2 = plt.subplot(2, 1, 2)
     
     # Subplot 1: Epoch vs Accuracy
-    sub1.plot(accuracy_train, 'or')
-    sub1.plot(f1, 'sr')
-    sub1.plot(accuracy_val, 'og')
-    sub1.plot(f1_val, 'sg')
+    sub1.plot(accuracy_train, linestyle='solid', color='r')
+    sub1.plot(accuracy_val, linestyle='solid', color='g')
     sub1.set_xticks(list(range(0, len(accuracy_train)+3)))
-    for i, value in enumerate(accuracy_train):
-        value = round(float(value), 4)
-        sub1.annotate(value, (i, accuracy_train[i]))
-    for i, value in enumerate(accuracy_val):
-        value = round(float(value), 4)
-        sub1.annotate(value, (i, accuracy_val[i]))
-    for i, value in enumerate(f1):
-        value = round(float(value), 4)
-        sub1.annotate(value, (i, f1[i]))
-    for i, value in enumerate(f1_val):
-        value = round(float(value), 4)
-        sub1.annotate(value, (i, f1_val[i]))
-    sub1.legend(labels=["train", "f1", "val", "f1_val"], loc='best')
+    sub1.legend(labels=["train", "val"], loc='best')
+    sub1.plot(accuracy_train, 'or')
+    sub1.plot(accuracy_val, 'og')
     sub1.set_xlabel("Epoch")
     sub1.set_ylabel("Accuracy")
     sub1.set_title("Epoch Accuracy")
     
     # Subplot 2: Epoch vs Loss
+    sub2.plot(loss_train, linestyle='solid', color='r')
+    sub2.plot(loss_val, linestyle='solid', color='g')
+    sub2.set_xticks(list(range(0, len(loss_train)+3)))
+    sub2.legend(labels=["Train", "Val"], loc='best')
     sub2.plot(loss_train, 'or')
     sub2.plot(loss_val, 'og')
-    sub2.set_xticks(list(range(0, len(loss_train)+3)))
-    for i, value in enumerate(loss_train):
-        value = round(float(value), 4)
-        sub2.annotate(value, (i, loss_train[i]))
-    for i, value in enumerate(loss_val):
-        value = round(float(value), 4)
-        sub2.annotate(value, (i, loss_val[i]))
-    sub2.legend(labels=["Train", "Val"], loc='best')
     sub2.set_xlabel("Epoch")
     sub2.set_ylabel("Loss")
     sub2.set_title("Epoch Loss")
@@ -260,8 +244,6 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
     accuracy = []
     losses_val = []
     accuracy_val = []
-    f1_scores = []
-    f1_scores_val = []
 
     train_batches = len(dataloaders[dataset])
 
@@ -317,8 +299,6 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
         accuracy.append(avg_accuracy.cpu())
         losses_val.append(avg_loss_val.cpu())
         accuracy_val.append(avg_accuracy_val.cpu())
-        f1_scores.append(avg_f1_score)
-        f1_scores_val.append(avg_f1_score_val)
         
         # Print result
         print('-' * 13)
@@ -341,7 +321,7 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
     print('\n', '#' * 15, ' FINISHED ', '#' * 15, '\n')
     vgg.load_state_dict(best_model_wts)
     # Print Graph
-    get_epoch_progress_graph(accuracy, losses, f1_scores, accuracy_val, losses_val, f1_scores_val)
+    get_epoch_progress_graph(accuracy, losses, accuracy_val, losses_val)
     return vgg
 
 
@@ -361,12 +341,12 @@ if __name__ == '__main__':
     # Define model requirements
     criterion = nn.CrossEntropyLoss()
     optimizer_ft = optim.SGD(vgg16.parameters(), lr=1e-3, momentum=0.9)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=1)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=1)
     # Evaluate before training
     print("[INFO] Before training evaluation in progress...")
     eval_model(vgg16, criterion, dataset=TEST)
     # Training
-    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=3)
+    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=50)
     torch.save(vgg16.state_dict(), output_dir)
     # Evaluate after training
     print("[INFO] After training evaluation in progress...")
