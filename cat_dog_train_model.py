@@ -253,7 +253,6 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
         loss_train = 0
         accuracy_train = 0
         vgg.train(True)
-        f1 = []
 
         for i, data in enumerate(dataloaders[dataset]):
             print(f"\r[TRAIN MODEL] Training batch {i + 1}/{train_batches} ({len(data[1])*(i+1)} images)", end='', flush=True)
@@ -279,8 +278,6 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
             # Save results
             loss_train += loss.data
             accuracy_train += torch.sum(preds == labels.data)
-            f1_sc = f1_score(labels.data.cpu(), preds.cpu())
-            f1.append(f1_sc)
 
             # Clear cache
             del inputs, labels, outputs, preds
@@ -288,7 +285,6 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
 
         avg_loss = loss_train / datasets_size[dataset]
         avg_accuracy = accuracy_train / datasets_size[dataset]
-        avg_f1_score = sum(f1) / len(f1)
         vgg.train(False)
         vgg.eval()
         print('')
@@ -305,10 +301,8 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
         print(f"[TRAIN MODEL] Epoch {epoch + 1} result: ")
         print(f"[TRAIN MODEL] Avg loss          (train):    {avg_loss:.4f}")
         print(f"[TRAIN MODEL] Avg accuracy      (train):    {avg_accuracy:.4f}")
-        print(f"[TRAIN MODEL] Avg f1 accuracy   (train):    {avg_f1_score:.4f}")
         print(f"[TRAIN MODEL] Avg loss          (val):      {avg_loss_val:.4f}")
         print(f"[TRAIN MODEL] Avg accuracy      (val):      {avg_accuracy_val:.4f}")
-        print(f"[TRAIN MODEL] Avg f1 accuracy   (val):      {avg_f1_score_val:.4f}")
         print('-' * 13)
 
         if avg_accuracy_val > best_accuracy:
