@@ -114,7 +114,7 @@ If you want to load a pre-trained model from your local computer, add the `model
 
 The project is organized as follows:
 
-- `vgg16_image_classification.py`: The main script to train and evaluate the VGG-16 model.
+- `cat_dog_train_model.py`: The main script to train and evaluate the VGG-16 model.
 - `data/`: Directory to store the training, validation, and test datasets.
 - `output/`: Directory to save the trained model.
 
