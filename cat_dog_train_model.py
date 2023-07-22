@@ -345,18 +345,21 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
             # Clear cache
             del inputs, labels, outputs, preds
             torch.cuda.empty_cache()
-            
-        before_lr = optimizer.param_groups[0]["lr"]
-        scheduler.step()
-        after_lr = optimizer.param_groups[0]["lr"]
-        print("\n[TRAIN MODEL] Epoch %d: SGD lr %.4f -> %.4f" % (epoch, before_lr, after_lr))
 
         avg_loss = loss_train / datasets_size[dataset]
         avg_accuracy = accuracy_train / datasets_size[dataset]
         vgg.train(False)
         vgg.eval()
         print('')
+
+        # Validate
         avg_loss_val, avg_accuracy_val = eval_model(vgg, criterion, dataset=VAL)
+        
+        # Adjust learning rate
+        before_lr = optimizer.param_groups[0]["lr"]
+        scheduler.step()
+        after_lr = optimizer.param_groups[0]["lr"]
+        print("\n[TRAIN MODEL] Epoch %d: lr %.4f -> %.4f" % (epoch+1, before_lr, after_lr))
         
         # Save data to plot graph
         losses.append(avg_loss.cpu())
@@ -395,7 +398,7 @@ if __name__ == '__main__':
     datasets_img, datasets_size, dataloaders, class_names = get_data(file_dir)
     # Get VGG16 pre-trained model
     vgg16 = get_vgg16_pretrained_model(len_target=2)
-    # vgg16 = get_vgg16_pretrained_model(model_dir='./output/VGG16_trained_99.31.pth', len_target=2)      # If load custom pre-trained model, watch out to match len target
+    # vgg16 = get_vgg16_pretrained_model(model_dir='./output/VGG16_trained.pth', len_target=2)      # If load custom pre-trained model, watch out to match len target
     # Move model to GPU
     if use_gpu:
         torch.cuda.empty_cache()
