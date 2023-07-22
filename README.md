@@ -47,68 +47,68 @@ pip install torch torchvision matplotlib scikit-learn
 
 4. Prepare the Data:
 
-Place your training, validation, and test datasets in separate directories (`train`, `val`, `test`) inside the `data` directory as shown below:
+- Place your training, validation, and test datasets in separate directories (`train`, `val`, `test`) inside the `data` directory as shown below:
 
-```
-Image-Classification-Dog-Cat/
-  cat_dog_train_model.py
-  pre-trained-model.pth (optional)
-  output/
-  data/
-      train/
-          class1/
-              image1.jpg
-              image2.jpg
-              ...
-          class2/
-              image1.jpg
-              image2.jpg
-              ...
-          ...
-      val/
-          class1/
-              image1.jpg
-              image2.jpg
-              ...
-          class2/
-              image1.jpg
-              image2.jpg
-              ...
-          ...
-      test/
-          class1/
-              image1.jpg
-              image2.jpg
-              ...
-          class2/
-              image1.jpg
-              image2.jpg
-              ...
-          ...
-```
+  ```
+  Image-Classification-Dog-Cat/
+    cat_dog_train_model.py
+    pre-trained-model.pth (optional)
+    output/
+    data/
+        train/
+            class1/
+                image1.jpg
+                image2.jpg
+                ...
+            class2/
+                image1.jpg
+                image2.jpg
+                ...
+            ...
+        val/
+            class1/
+                image1.jpg
+                image2.jpg
+                ...
+            class2/
+                image1.jpg
+                image2.jpg
+                ...
+            ...
+        test/
+            class1/
+                image1.jpg
+                image2.jpg
+                ...
+            class2/
+                image1.jpg
+                image2.jpg
+                ...
+            ...
+  ```
 
-If you want to load a pre-trained model from your local computer, add the `model_dir` argument to the `get_vgg16_pretrained_model()` function in the `cat_dog_train_model.py` script.
+- If you want to load a pre-trained model from your local computer, add the `model_dir` argument to the `get_vgg16_pretrained_model()` function in the `cat_dog_train_model.py` script.
 
 5. Training and Evaluation:
 
-   - Open the `cat_dog_train_model.py` file and modify the necessary parameters such as file directories, output directory, and your data files name.
+- Open the `cat_dog_train_model.py` file and modify the necessary parameters such as file directories, output directory, and your data files name.
 
-     ```python
-     file_dir = './data-shorten'
-     out_model_dir = './output/VGG16_trained.pth'
-     out_plot_dir = './output/epoch_progress.jpg'
-     out_report_dir = './output/classification_report.txt'
-     TRAIN = 'train' 
-     VAL = 'val'
-     TEST = 'test'
-     ```
-   - Run the script:
+    ```python
+    file_dir = './data-shorten'
+    out_model_dir = './output/VGG16_trained.pth'
+    out_plot_dir = './output/epoch_progress.jpg'
+    out_report_dir = './output/classification_report.txt'
+    TRAIN = 'train' 
+    VAL = 'val'
+    TEST = 'test'
+    ```
+  - Run the script:
 
-     ```bash
-     python ./cat_dog_train_model.py
-     ```
+    ```bash
+    python ./cat_dog_train_model.py
+    ```
 
-   The script will train the VGG-16 model on the training dataset, evaluate its performance on the validation dataset, and save the trained model for future use.
+- The script will train the VGG-16 model on the training dataset, evaluate its performance on the validation dataset, and save the trained model for future use.
 
 ## Project Structure
 
