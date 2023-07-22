@@ -12,7 +12,7 @@ import copy
 
 
 ## Define file directories
-file_dir = './data-shorten'
+file_dir = './data'
 out_model_dir = './output/VGG16_trained.pth'
 out_plot_dir = './output/epoch_progress.jpg'
 out_report_dir = './output/classification_report.txt'
@@ -337,7 +337,6 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-            scheduler.step()
 
             # Save results
             loss_train += loss.data
@@ -346,6 +345,11 @@ def train_model(vgg, criterion, optimizer, scheduler, dataset=TRAIN, num_epochs=
             # Clear cache
             del inputs, labels, outputs, preds
             torch.cuda.empty_cache()
+            
+        before_lr = optimizer.param_groups[0]["lr"]
+        scheduler.step()
+        after_lr = optimizer.param_groups[0]["lr"]
+        print("\n[TRAIN MODEL] Epoch %d: SGD lr %.4f -> %.4f" % (epoch, before_lr, after_lr))
 
         avg_loss = loss_train / datasets_size[dataset]
         avg_accuracy = accuracy_train / datasets_size[dataset]
@@ -391,20 +395,20 @@ if __name__ == '__main__':
     datasets_img, datasets_size, dataloaders, class_names = get_data(file_dir)
     # Get VGG16 pre-trained model
     vgg16 = get_vgg16_pretrained_model(len_target=2)
-    # vgg16 = get_vgg16_pretrained_model(model_dir='./output/VGG16_trained.pth', len_target=2)      # If load custom pre-trained model, watch out to match len target
+    # vgg16 = get_vgg16_pretrained_model(model_dir='./output/VGG16_trained_99.31.pth', len_target=2)      # If load custom pre-trained model, watch out to match len target
     # Move model to GPU
     if use_gpu:
         torch.cuda.empty_cache()
         vgg16.cuda()
     # Define model requirements
     criterion = nn.CrossEntropyLoss()
-    optimizer_ft = optim.SGD(vgg16.parameters(), lr=1e-2, momentum=0.9)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.5)
+    optimizer_ft = optim.SGD(vgg16.parameters(), lr=1e-3, momentum=0.9)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=5, gamma=0.5)
     # Evaluate before training
     print("[INFO] Before training evaluation in progress...")
     eval_model(vgg16, criterion, dataset=TEST)
     # Training
-    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=10)
+    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=30)
     torch.save(vgg16.state_dict(), out_model_dir)
     # Evaluate after training
     print("[INFO] After training evaluation in progress...")
