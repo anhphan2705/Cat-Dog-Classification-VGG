@@ -41,9 +41,9 @@ pip install torch torchvision matplotlib scikit-learn
 
 - Here is a link to my trained model with a classification report available to download. It reported a 99.6% acccuracy for my test file.
 
-```
-https://www.dropbox.com/s/nxllvz36o241dal/VGG-Train-9960.zip?dl=0
-```
+  ```
+  https://www.dropbox.com/s/nxllvz36o241dal/VGG-Train-9960.zip?dl=0
+  ```
 
 3. Prepare the Data:
 
