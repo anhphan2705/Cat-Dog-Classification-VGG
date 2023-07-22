@@ -39,7 +39,7 @@ Before running the code, make sure you have the following dependencies installed
 
 3. Download pre-trained model (optional):
 
-- Here is a link to my trained model with a classification report available to download. It reported a 99.6% acccuracy for my test file.
+Here is a link to my trained model with a classification report available to download. It reported a 99.6% acccuracy for my test file.
 
   ```link
   https://www.dropbox.com/s/nxllvz36o241dal/VGG-Train-9960.zip?dl=0
@@ -50,7 +50,7 @@ Before running the code, make sure you have the following dependencies installed
 - Place your training, validation, and test datasets in separate directories (`train`, `val`, `test`) inside the `data` directory as shown below:
 
   ```
-  Image-Classification-Dog-Cat/
+  Image-Classification-VGG-Dog-Cat/
     cat_dog_train_model.py
     pre-trained-model.pth (optional)
     output/
