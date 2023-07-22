@@ -4,11 +4,16 @@ from PIL import Image
 from io import BytesIO
 import numpy as np
 import cv2
-from torchvision import transforms
+import torch
+import torch.nn as nn
+from torch.autograd import Variable
+from torchvision import models, transforms
 from skimage.transform import resize
+import time
 
 
 app = FastAPI()
+MODEL_DIRECTORY = './output/VGG16_trained_9960.pth'
 
 
 def convert_byte_to_arr(byte_image):
@@ -44,16 +49,44 @@ def convert_arr_to_byte(arr_image):
 
 
 def get_data(np_images):
-    preprocess = transforms.Compose([
+    data_transform = transforms.Compose([
         transforms.Resize(254),
         transforms.CenterCrop(224),
         transforms.ToTensor(),
     ])
+    # Load data into dataloaders
+    # dataloaders = torch.utils.data.DataLoader(
+    #         datasets_img,
+    #         batch_size=1,
+    #         shuffle=False,
+    #         num_workers=1
+    #     )
 
-    data = preprocess(np_images)
+    data = data_transform(np_images)
     data = data.unsqueeze(0)
     return data
+
+def get_vgg16_pretrained_model(model_dir = MODEL_DIRECTORY , weights=models.VGG16_BN_Weights.DEFAULT):
+    """
+    Retrieve the VGG-16 pre-trained model and modify its classifier for the desired number of output classes.
+
+    Args:
+        model_dir (str, optional): Directory path for loading a pre-trained model state dictionary. Defaults to ''.
+        weights (str or dict, optional): Pre-trained model weights. Defaults to models.vgg16_bn(pretrained=True).state_dict().
+        len_target (int, optional): Number of output classes. Defaults to 1000.
+
+    Returns:
+        vgg16 (torchvision.models.vgg16): VGG-16 model with modified classifier.
+    """
+    print("[INFO] Getting VGG-16 pre-trained model...")
+    # Load VGG-16 pretrained model
+    vgg16 = models.vgg16_bn(weights)
+    vgg16.load_state_dict(torch.load(model_dir))
+    vgg16.eval()
+    print("[INFO] Loaded VGG-16 pre-trained model\n", vgg16, "\n")
     
+    return vgg16
+
 
 @app.get("/")
 def welcome_page():
@@ -90,11 +123,18 @@ async def dog_cat_classification(in_images: list[UploadFile]):
         byte_image = await in_image.read()
         arr_image = convert_byte_to_arr(byte_image)
         images.append(arr_image)
-
+    # Preping data n model
     data = get_data(images)
+    vgg = get_vgg16_pretrained_model()
+    # Use GPU if available
+    use_gpu = torch.cuda.is_available()
+    print("[INFO] Using CUDA") if use_gpu else print("[INFO] Using CPU")
+    if use_gpu:
+        torch.cuda.empty_cache()
+        vgg.cuda()
 
-    byte_stitched_image = convert_arr_to_byte(images)
-    return Response(byte_stitched_image, media_type="image/jpg")
+    byte_image = convert_arr_to_byte(images)
+    return Response(byte_image, media_type="image/jpg")
 
 
 if __name__ == "__main__":
