@@ -27,15 +27,15 @@ Before running the code, make sure you have the following dependencies installed
 
 1. Clone the repository:
 
-```bash
-git clone https://github.com/anhphan2705/Image-Classification-Dog-Cat.git
-```
+  ```bash
+  git clone https://github.com/anhphan2705/Image-Classification-Dog-Cat.git
+  ```
 
 2. Install the required dependencies:
 
-```bash
-pip install torch torchvision matplotlib scikit-learn
-```
+  ```bash
+  pip install torch torchvision matplotlib scikit-learn
+  ```
 
 3. Download pre-trained model (optional):
 
@@ -93,20 +93,20 @@ pip install torch torchvision matplotlib scikit-learn
 
 - Open the `cat_dog_train_model.py` file and modify the necessary parameters such as file directories, output directory, and your data files name.
 
-    ```python
-    file_dir = './data-shorten'
-    out_model_dir = './output/VGG16_trained.pth'
-    out_plot_dir = './output/epoch_progress.jpg'
-    out_report_dir = './output/classification_report.txt'
-    TRAIN = 'train' 
-    VAL = 'val'
-    TEST = 'test'
-    ```
-  - Run the script:
+  ```python
+  file_dir = './data-shorten'
+  out_model_dir = './output/VGG16_trained.pth'
+  out_plot_dir = './output/epoch_progress.jpg'
+  out_report_dir = './output/classification_report.txt'
+  TRAIN = 'train' 
+  VAL = 'val'
+  TEST = 'test'
+  ```
+- Run the script:
 
-    ```bash
-    python ./cat_dog_train_model.py
-    ```
+  ```bash
+  python ./cat_dog_train_model.py
+  ```
 
 - The script will train the VGG-16 model on the training dataset, evaluate its performance on the validation dataset, and save the trained model for future use.
 
