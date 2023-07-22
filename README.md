@@ -41,11 +41,11 @@ pip install torch torchvision matplotlib scikit-learn
 
 - Here is a link to my trained model with a classification report available to download. It reported a 99.6% acccuracy for my test file.
 
-  ```
+  ```link
   https://www.dropbox.com/s/nxllvz36o241dal/VGG-Train-9960.zip?dl=0
   ```
 
-3. Prepare the Data:
+4. Prepare the Data:
 
 Place your training, validation, and test datasets in separate directories (`train`, `val`, `test`) inside the `data` directory as shown below:
 
@@ -89,7 +89,7 @@ Image-Classification-Dog-Cat/
 
 If you want to load a pre-trained model from your local computer, add the `model_dir` argument to the `get_vgg16_pretrained_model()` function in the `cat_dog_train_model.py` script.
 
-4. Training and Evaluation:
+5. Training and Evaluation:
 
    - Open the `cat_dog_train_model.py` file and modify the necessary parameters such as file directories, output directory, and your data files name.
 
