@@ -37,6 +37,14 @@ git clone https://github.com/anhphan2705/Image-Classification-Dog-Cat.git
 pip install torch torchvision matplotlib scikit-learn
 ```
 
+3. Download pre-trained model (optional):
+
+- Here is a link to my trained model with a classification report available to download. It reported a 99.6% acccuracy for my test file.
+
+```
+https://www.dropbox.com/s/nxllvz36o241dal/VGG-Train-9960.zip?dl=0
+```
+
 3. Prepare the Data:
 
 Place your training, validation, and test datasets in separate directories (`train`, `val`, `test`) inside the `data` directory as shown below:
@@ -45,6 +53,7 @@ Place your training, validation, and test datasets in separate directories (`tra
 Image-Classification-Dog-Cat/
   cat_dog_train_model.py
   pre-trained-model.pth (optional)
+  output/
   data/
       train/
           class1/
