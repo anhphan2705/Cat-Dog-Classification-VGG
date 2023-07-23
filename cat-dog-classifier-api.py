@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, Response
 from fastapi.responses import HTMLResponse
-from PIL import Image
+from PIL import Image, ImageDraw
 from io import BytesIO
 import numpy as np
 import cv2
@@ -27,7 +27,7 @@ def convert_byte_to_arr(byte_image):
     Returns:
         numpy.ndarray: The NumPy array representation of the image.
     """
-    arr_image = np.array(Image.open(BytesIO(byte_image)))
+    arr_image = Image.open(BytesIO(byte_image))
     return arr_image
 
 
@@ -41,8 +41,10 @@ def convert_arr_to_byte(arr_image):
     Returns:
         bytes: The byte representation of the image.
     """
-    arr_image_cvt = cv2.cvtColor(arr_image, cv2.COLOR_RGB2BGR)
-    success, byte_image = cv2.imencode(".jpg", arr_image_cvt)
+    arr_image = np.array(arr_image)
+    arr_image = cv2.cvtColor(arr_image, cv2.COLOR_RGB2BGR)
+    # Encode the image as JPEG format
+    success, byte_image = cv2.imencode(".jpg", arr_image)
     if success:
         return byte_image.tobytes()
     else:
@@ -51,7 +53,6 @@ def convert_arr_to_byte(arr_image):
 
 def get_data(np_images):
     data_transform = transforms.Compose([
-        transforms.ToPILImage(), 
         transforms.Resize(254),
         transforms.CenterCrop(224),
         transforms.ToTensor(),
@@ -65,11 +66,10 @@ def get_data(np_images):
     #     )
     data = []
     for image in np_images:
-        # Expand to [batch_size, h, w, d]
+        # Convert numpy ndarray [224, 224, 3]
         image = data_transform(image)
+        # Expand to [batch_size, 224, 224, 3]
         image = torch.unsqueeze(image, 0)
-        print('inside1', image)
-        print('inside2', image.shape)
         data.append(image)
     return data
 
@@ -170,12 +170,8 @@ async def dog_cat_classification(in_images: list[UploadFile]):
         arr_image = convert_byte_to_arr(byte_image)
         images.append(arr_image)
         
-    for image in images:
-        print('1', type(image))
     # Preping data n model
     data = get_data(images)
-    for img in data:
-        print('2', type(img))
     vgg = get_vgg16_pretrained_model()
     # Use GPU if available
     print("[INFO] Using CUDA") if use_gpu else print("[INFO] Using CPU")
@@ -183,16 +179,20 @@ async def dog_cat_classification(in_images: list[UploadFile]):
         torch.cuda.empty_cache()
         vgg.cuda()
     labels, elapsed_time = get_prediction(vgg, data)
-    print(labels)
-    print(elapsed_time)
+    print(f"[INFO] Label : {labels} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
+    
+    # Call draw Method to add 2D graphics in an image
+    I1 = ImageDraw.Draw(images[0])
+    
+    # Add Text to an image
+    I1.text((10, 10), f"{labels[0]}", fill=(255, 0, 0))
+        
+    byte_images = convert_arr_to_byte(images[0])
+    response_text = f'[INFO] Label : {labels} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s'
 
-    # byte_image = convert_arr_to_byte(filled_img)
-
-    # response_text = f'Label : {labels} in time {elapsed_time}s'
-
-    # response = Response(content=byte_image, media_type="image/jpg")
-    # response.headers["Result"] = response_text
-    # return response
+    response = Response(content=byte_images, media_type="image/jpg")
+    response.headers["Result"] = response_text
+    return response
 
 if __name__ == "__main__":
     import uvicorn
