@@ -24,7 +24,7 @@ def convert_byte_to_arr(byte_image):
     Returns:
         Image.Image: A PIL Image object representing the image in RGB format.
     """
-    arr_image = Image.open(BytesIO(byte_image))
+    arr_image = Image.open(BytesIO(byte_image)).convert("RGB")
     return arr_image
 
 
