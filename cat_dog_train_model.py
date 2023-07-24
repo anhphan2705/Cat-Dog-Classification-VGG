@@ -256,7 +256,8 @@ def eval_model(vgg, criterion, dataset=VAL):
                 labels = Variable(labels)
 
         outputs = vgg(inputs)
-
+        # probs = torch.nn.functional.softmax(outputs.data, dim=1)          # If need to calculate confidence level
+        # confs, preds = torch.max(probs, 1)
         _, preds = torch.max(outputs.data, 1)
         loss = criterion(outputs, labels)
         accuracy_test += torch.sum(preds == labels.data)
