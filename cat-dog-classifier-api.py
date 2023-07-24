@@ -8,7 +8,6 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torchvision import models, transforms
-from skimage.transform import resize
 import time
 
 
@@ -18,29 +17,11 @@ use_gpu = torch.cuda.is_available()
 
 
 def convert_byte_to_arr(byte_image):
-    """
-    Converts a byte image to a NumPy array.
-
-    Args:
-        byte_image (bytes): The byte representation of the image.
-
-    Returns:
-        numpy.ndarray: The NumPy array representation of the image.
-    """
     arr_image = Image.open(BytesIO(byte_image))
     return arr_image
 
 
 def convert_arr_to_byte(arr_image):
-    """
-    Converts a NumPy array to a byte image.
-
-    Args:
-        arr_image (numpy.ndarray): The NumPy array representation of the image.
-
-    Returns:
-        bytes: The byte representation of the image.
-    """
     arr_image = np.array(arr_image)
     arr_image = cv2.cvtColor(arr_image, cv2.COLOR_RGB2BGR)
     # Encode the image as JPEG format
@@ -57,13 +38,6 @@ def get_data(np_images):
         transforms.CenterCrop(224),
         transforms.ToTensor(),
     ])
-    # Load data into dataloaders
-    # dataloaders = torch.utils.data.DataLoader(
-    #         datasets_img,
-    #         batch_size=1,
-    #         shuffle=False,
-    #         num_workers=1
-    #     )
     data = []
     for image in np_images:
         # Convert numpy ndarray [224, 224, 3]
@@ -75,12 +49,11 @@ def get_data(np_images):
 
 def get_vgg16_pretrained_model(model_dir = MODEL_DIRECTORY , weights=models.VGG16_BN_Weights.DEFAULT):
     """
-    Retrieve the VGG-16 pre-trained model and modify its classifier for the desired number of output classes.
+    Retrieve the VGG-16 pre-trained model and modify the classifier with a fine tuned one.
 
     Args:
         model_dir (str, optional): Directory path for loading a pre-trained model state dictionary. Defaults to ''.
         weights (str or dict, optional): Pre-trained model weights. Defaults to models.vgg16_bn(pretrained=True).state_dict().
-        len_target (int, optional): Number of output classes. Defaults to 1000.
 
     Returns:
         vgg16 (torchvision.models.vgg16): VGG-16 model with modified classifier.
@@ -155,13 +128,10 @@ async def dog_cat_classification(in_images: list[UploadFile]):
     API endpoint to stitch multiple images together.
 
     Args:
-        in_images (List[UploadFile]): List of images to be stitched.
+        in_images (List[UploadFile]): List of images in JPG format to be classified
 
     Returns:
-        Response: The stitched image as a response.
-
-    Raises:
-        Exception: If stitching fails or the image cannot be cropped.
+        Response: Image with a label on top right corner as a response.
     """
     print("begin")
     images = []
@@ -181,10 +151,8 @@ async def dog_cat_classification(in_images: list[UploadFile]):
     labels, elapsed_time = get_prediction(vgg, data)
     print(f"[INFO] Label : {labels} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
     
-    # Call draw Method to add 2D graphics in an image
+    # Add label to top left corner of input image
     I1 = ImageDraw.Draw(images[0])
-    
-    # Add Text to an image
     I1.text((10, 10), f"{labels[0]}", fill=(255, 0, 0))
         
     byte_images = convert_arr_to_byte(images[0])
@@ -196,5 +164,4 @@ async def dog_cat_classification(in_images: list[UploadFile]):
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)
