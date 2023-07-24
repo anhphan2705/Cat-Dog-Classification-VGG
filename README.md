@@ -177,6 +177,7 @@ The code follows the following structure:
 
 - Place the model somewhere, preferably as shown in [Getting Started](#getting-started) step 4.
 - Modify the `MODEL_DIRECTORY` constant in the `cat-dog-classifier-api.py` script accordingly at line 15
+
   ```python
    MODEL_DIRECTORY = './output/VGG16_trained_9960.pth'
   ```
@@ -184,6 +185,7 @@ The code follows the following structure:
 3. Adjust variables:
 
 - You can also adjust some varibles as you prefer for the API response at line 16 and 17. These font setting are for the labels that will be print on the output images
+
   ```python
    FONT = "arial.ttf"
    FONT_SIZE = 25
