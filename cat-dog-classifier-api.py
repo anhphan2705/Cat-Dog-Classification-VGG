@@ -13,6 +13,8 @@ import time
 
 app = FastAPI()
 MODEL_DIRECTORY = './output/VGG16_trained_9960.pth'
+FONT = "arial.ttf"
+FONT_SIZE = 25
 use_gpu = torch.cuda.is_available()
 
 def convert_byte_to_arr(byte_image):
@@ -243,7 +245,7 @@ async def dog_cat_classification(in_images: list[UploadFile]):
     print(f"[INFO] Label : {labels} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
 
     # Add label to the top left corner of the input image
-    image_w_label = assign_image_label(images, labels)
+    image_w_label = assign_image_label(images, labels, font=FONT, font_size=FONT_SIZE)
     # Combined multiple images into one
     image_combined = multiple_to_one(image_w_label)
     # Output API
