@@ -76,13 +76,14 @@ def multiple_to_one(images):
     return new_im
 
 
-def assign_image_label(images, labels, font="arial.ttf", font_size=25):
+def assign_image_label(images, labels, confs, font="arial.ttf", font_size=25):
     """
     Add labels to the input images.
 
     Args:
         images (List[Image.Image]): List of PIL Image objects representing the input images.
         labels (List[str]): List of labels corresponding to the input images.
+        confs (List[float]): List of confidence level of each prediction for the corresponding input image
         font (str, optional): The font file to be used for the labels. Defaults to "arial.ttf".
         font_size (int, optional): The font size for the labels. Defaults to 25.
 
@@ -93,7 +94,7 @@ def assign_image_label(images, labels, font="arial.ttf", font_size=25):
     font_setting = ImageFont.truetype(font, font_size)
     for index in range(len(images)):
         I1 = ImageDraw.Draw(images[index])
-        I1.text((10, 10), f"{labels[index]}", fill=(255, 0, 0), font=font_setting)
+        I1.text((10, 10), f"{labels[index]} ({confs[index]:4f})", fill=(255, 0, 0), font=font_setting)
         image_w_label.append(images[index])
         
     return image_w_label
@@ -165,10 +166,11 @@ def get_prediction(model, images):
         images (List[torch.Tensor]): List of preprocessed images as PyTorch tensors.
 
     Returns:
-        Tuple[List[str], float]: A tuple containing the list of predicted labels and the time taken for classification.
+        Tuple[List[str], List[float], float]: A tuple containing the list of predicted labels, the confidence for the predictions, and the time taken for classification.
     """
     since = time.time()
     labels = []
+    confs = []
     model.train(False)
     model.eval()
 
@@ -180,18 +182,22 @@ def get_prediction(model, images):
                 image = Variable(image)
 
         outputs = model(image)
-        _, pred = torch.max(outputs.data, 1)
-
+        
+        probs = torch.nn.functional.softmax(outputs.data, dim=1)
+        conf, pred = torch.max(probs, 1)
+        
         if pred == 0:
             labels.append('cat')
+            confs.append(round(float(conf.cpu()), 4))
         elif pred == 1:
             labels.append('dog')
+            confs.append(round(float(conf.cpu()), 4))
         else:
             print('[INFO] Labeling went wrong')
 
     elapsed_time = time.time() - since
 
-    return labels, elapsed_time
+    return labels, confs, elapsed_time
 
 
 @app.get("/")
@@ -241,16 +247,16 @@ async def dog_cat_classification(in_images: list[UploadFile]):
         torch.cuda.empty_cache()
         vgg.cuda()
     
-    labels, elapsed_time = get_prediction(vgg, data)
-    print(f"[INFO] Label : {labels} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
+    labels, confs, elapsed_time = get_prediction(vgg, data)
+    print(f"[INFO] Label : {labels} with confidence {confs} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
 
-    # Add label to the top left corner of the input image
-    image_w_label = assign_image_label(images, labels, font=FONT, font_size=FONT_SIZE)
+    # Add label and confidence level to the top left corner of the input image
+    image_w_label = assign_image_label(images, labels, confs, font=FONT, font_size=FONT_SIZE)
     # Combined multiple images into one
     image_combined = multiple_to_one(image_w_label)
     # Output API
     byte_images = convert_arr_to_byte(image_combined)
-    response_text = f'Label : {labels} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s'
+    response_text = f'Label : {labels} with confidence {confs} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s'
     response = Response(content=byte_images, media_type="image/jpg")
     response.headers["Result"] = response_text
     
