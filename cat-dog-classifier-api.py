@@ -117,9 +117,9 @@ def get_data(np_images):
     ])
     data = []
     for image in np_images:
-        # Convert numpy ndarray [224, 224, 3] to PyTorch tensor
+        # Convert numpy ndarray [3, 224, 224] to PyTorch tensor
         image = data_transform(image)
-        # Expand to [batch_size, 224, 224, 3]
+        # Expand to [batch_size, 3, 224, 224]
         image = torch.unsqueeze(image, 0)
         data.append(image)
     return data
