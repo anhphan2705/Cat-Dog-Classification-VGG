@@ -1,3 +1,4 @@
+# Import necessary libraries and modules
 from fastapi import FastAPI, UploadFile, Response
 from fastapi.responses import HTMLResponse
 from PIL import Image, ImageDraw, ImageFont
@@ -72,6 +73,29 @@ def multiple_to_one(images):
 
     return new_im
 
+
+def assign_image_label(images, labels, font="arial.ttf", font_size=25):
+    """
+    Add labels to the input images.
+
+    Args:
+        images (List[Image.Image]): List of PIL Image objects representing the input images.
+        labels (List[str]): List of labels corresponding to the input images.
+        font (str, optional): The font file to be used for the labels. Defaults to "arial.ttf".
+        font_size (int, optional): The font size for the labels. Defaults to 25.
+
+    Returns:
+        List[Image.Image]: List of PIL Image objects with labels added to the top left corner.
+    """
+    image_w_label = []
+    font_setting = ImageFont.truetype(font, font_size)
+    for index in range(len(images)):
+        I1 = ImageDraw.Draw(images[index])
+        I1.text((10, 10), f"{labels[index]}", fill=(255, 0, 0), font=font_setting)
+        image_w_label.append(images[index])
+        
+    return image_w_label
+    
 
 def get_data(np_images):
     """
@@ -219,20 +243,15 @@ async def dog_cat_classification(in_images: list[UploadFile]):
     print(f"[INFO] Label : {labels} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
 
     # Add label to the top left corner of the input image
-    image_w_label = []
-    font = ImageFont.truetype("arial.ttf", 25)
-    for index in range(len(images)):
-        I1 = ImageDraw.Draw(images[index])
-        I1.text((10, 10), f"{labels[index]}", fill=(255, 0, 0), font=font)
-        image_w_label.append(images[index])
-    
+    image_w_label = assign_image_label(images, labels)
+    # Combined multiple images into one
     image_combined = multiple_to_one(image_w_label)
-
+    # Output API
     byte_images = convert_arr_to_byte(image_combined)
-    response_text = f'[INFO] Label : {labels} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s'
-
+    response_text = f'Label : {labels} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s'
     response = Response(content=byte_images, media_type="image/jpg")
     response.headers["Result"] = response_text
+    
     return response
 
 
