@@ -176,7 +176,7 @@ The code follows the following structure:
 2. Follow the suggested folder directory
 
 - Place the model somewhere, preferably as shown in [Getting Started](#getting-started) step 4.
-- Modify the `MODEL_DIRECTORY` constant in the `cat-dog-classifier.py` script accordingly at line 15
+- Modify the `MODEL_DIRECTORY` constant in the `cat-dog-classifier-api.py` script accordingly at line 15
   ```python
    MODEL_DIRECTORY = './output/VGG16_trained_9960.pth'
   ```
