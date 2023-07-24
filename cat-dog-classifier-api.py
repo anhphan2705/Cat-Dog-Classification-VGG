@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, Response
 from fastapi.responses import HTMLResponse
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 import numpy as np
 import cv2
@@ -46,6 +46,31 @@ def convert_arr_to_byte(arr_image):
         return byte_image.tobytes()
     else:
         raise Exception("Cannot convert array image to byte image")
+    
+
+def multiple_to_one(images):
+    """
+    Combine multiple images horizontally into a single image.
+
+    Args:
+        images (List[Image.Image]): List of PIL Image objects representing the input images.
+
+    Returns:
+        Image.Image: A new PIL Image object containing the input images combined horizontally.
+    """
+    widths, heights = zip(*(i.size for i in images))
+
+    total_width = sum(widths)
+    max_height = max(heights)
+
+    new_im = Image.new('RGB', (total_width, max_height))
+
+    x_offset = 0
+    for im in images:
+        new_im.paste(im, (x_offset,0))
+        x_offset += im.size[0]
+
+    return new_im
 
 
 def get_data(np_images):
@@ -171,7 +196,7 @@ async def dog_cat_classification(in_images: list[UploadFile]):
         in_images (List[UploadFile]): List of images in JPG format to be classified.
 
     Returns:
-        fastapi.responses.Response: Image with a label on the top left corner as a response.
+        fastapi.responses.Response: Images with a label on the top left corner as a response.
     """
     print("begin")
     images = []
@@ -194,10 +219,16 @@ async def dog_cat_classification(in_images: list[UploadFile]):
     print(f"[INFO] Label : {labels} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
 
     # Add label to the top left corner of the input image
-    I1 = ImageDraw.Draw(images[0])
-    I1.text((10, 10), f"{labels[0]}", fill=(255, 0, 0))
+    image_w_label = []
+    font = ImageFont.truetype("arial.ttf", 25)
+    for index in range(len(images)):
+        I1 = ImageDraw.Draw(images[index])
+        I1.text((10, 10), f"{labels[index]}", fill=(255, 0, 0), font=font)
+        image_w_label.append(images[index])
+    
+    image_combined = multiple_to_one(image_w_label)
 
-    byte_images = convert_arr_to_byte(images[0])
+    byte_images = convert_arr_to_byte(image_combined)
     response_text = f'[INFO] Label : {labels} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s'
 
     response = Response(content=byte_images, media_type="image/jpg")
