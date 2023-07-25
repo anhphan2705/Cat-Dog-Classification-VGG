@@ -230,18 +230,19 @@ async def dog_cat_classification(in_images: list[UploadFile]):
     Returns:
         fastapi.responses.Response: Images with a label on the top left corner as a response.
     """
-    print("begin")
     images = []
     for in_image in in_images:
         byte_image = await in_image.read()
         arr_image = convert_byte_to_arr(byte_image)
         images.append(arr_image)
-
+    print(f'[INFO] Received {len(images)} images')
+    
     # Preparing data and loading the model
     data = get_data(images)
     vgg = get_vgg16_pretrained_model()
     
     # Use GPU if available
+    print('[INFO] Classification in progress')
     print("[INFO] Using CUDA") if use_gpu else print("[INFO] Using CPU")
     if use_gpu:
         torch.cuda.empty_cache()
@@ -251,10 +252,12 @@ async def dog_cat_classification(in_images: list[UploadFile]):
     print(f"[INFO] Label : {labels} with confidence {confs} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s")
 
     # Add label and confidence level to the top left corner of the input image
+    print('[INFO] Writing labels onto output images')
     image_w_label = assign_image_label(images, labels, confs, font=FONT, font_size=FONT_SIZE)
     # Combined multiple images into one
     image_combined = multiple_to_one(image_w_label)
     # Output API
+    print('[INFO] Returning output')
     byte_images = convert_arr_to_byte(image_combined)
     response_text = f'Label : {labels} with confidence {confs} in time {(elapsed_time // 60):.0f}m {(elapsed_time % 60):.0f}s'
     response = Response(content=byte_images, media_type="image/jpg")
