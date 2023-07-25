@@ -194,7 +194,7 @@ The code follows the following structure:
 4. Run the API:
 
 ```bash
-uvicorn app:app --host 0.0.0.0 --port 8000
+uvicorn cat-dog-classifier-api:app --host 0.0.0.0 --port 8000
 ```
 
 5. Access the API documentation:
