@@ -399,7 +399,7 @@ if __name__ == '__main__':
     datasets_img, datasets_size, dataloaders, class_names = get_data(file_dir)
     # Get VGG16 pre-trained model
     vgg16 = get_vgg16_pretrained_model(len_target=2)
-    # vgg16 = get_vgg16_pretrained_model(model_dir='./output/VGG16_trained.pth', len_target=2)      # If load custom pre-trained model, watch out to match len target
+    # vgg16 = get_vgg16_pretrained_model(model_dir='./output/9960/VGG16_trained_9960.pth', len_target=2)      # If load custom pre-trained model, watch out to match len target
     # Move model to GPU
     if use_gpu:
         torch.cuda.empty_cache()
@@ -407,12 +407,12 @@ if __name__ == '__main__':
     # Define model requirements
     criterion = nn.CrossEntropyLoss()
     optimizer_ft = optim.SGD(vgg16.parameters(), lr=1e-3, momentum=0.9)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=5, gamma=0.5)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.5)
     # Evaluate before training
     print("[INFO] Before training evaluation in progress...")
     eval_model(vgg16, criterion, dataset=TEST)
     # Training
-    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=30)
+    vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=50)
     torch.save(vgg16.state_dict(), out_model_dir)
     # Evaluate after training
     print("[INFO] After training evaluation in progress...")
